@@ -138,6 +138,7 @@ export default function TriageBoard({ pullRequests }: Props) {
 
   const HEADERS: Array<{ label: string; col?: SortCol; width?: string }> = [
     { label: 'PR', col: 'number', width: '80px' },
+    { label: 'Diff', width: '70px' },
     { label: 'Title', col: 'title' },
     { label: 'Author', col: 'author', width: '120px' },
     { label: 'CI', width: '130px' },
@@ -327,6 +328,20 @@ export default function TriageBoard({ pullRequests }: Props) {
                         <span className="block mt-0.5 truncate" style={{ ...type.secondary, fontSize: 11 }} title={pr.repository_name}>
                           {pr.repository_name.replace('vets-api-', '')}
                         </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 align-top tabular-nums">
+                      {typeof pr.additions === 'number' && typeof pr.deletions === 'number' ? (
+                        <span
+                          className="whitespace-nowrap"
+                          style={type.secondary}
+                          title={`${pr.additions} added, ${pr.deletions} removed${typeof pr.changed_files === 'number' ? ` across ${pr.changed_files} file${pr.changed_files === 1 ? '' : 's'}` : ''}`}
+                        >
+                          <span style={{ color: T.green }}>+{pr.additions}</span>{' '}
+                          <span style={{ color: T.red }}>-{pr.deletions}</span>
+                        </span>
+                      ) : (
+                        <span style={type.secondary}>—</span>
                       )}
                     </td>
                     <td className="px-4 py-3 align-top">
