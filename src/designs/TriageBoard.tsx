@@ -126,7 +126,7 @@ export default function TriageBoard({ pullRequests }: Props) {
     { label: 'PR', col: 'number', width: '80px' },
     { label: 'Diff', width: '70px' },
     { label: 'Title', col: 'title' },
-    { label: 'Author', col: 'author', width: '120px' },
+    { label: 'Author', col: 'author', width: '180px' },
     { label: 'CI', width: '130px' },
     { label: 'Status', width: '130px' },
     { label: 'Created', col: 'created', width: '72px' },
