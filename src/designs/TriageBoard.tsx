@@ -5,17 +5,14 @@ import {
   type Status,
   FILTERS,
   classifyStatus,
-  reviewerBadgesFor,
   absoluteTime,
   countByFilter,
   applyFilter,
   summarizeFailingChecksCompact,
-  changesRequestedCell,
-  fmtEastern,
   timeAgoShort,
 } from '../lib/dashboard'
 
-import { displayUser, isBotReviewer } from '../lib/utils'
+import { displayUser } from '../lib/utils'
 
 interface Props {
   pullRequests: PullRequest[]
@@ -81,17 +78,6 @@ function statusTone(key: Status): string {
   return T.text
 }
 
-const badgeTone: Record<string, string> = {
-  approved: T.green,
-  changes_requested: T.amber,
-  commented: T.text,
-}
-
-// Map the shared cell's semantic tone to this design's palette.
-function criTone(tone: 'red' | 'amber' | 'neutral'): string {
-  return tone === 'red' ? T.red : tone === 'amber' ? T.amber : T.text
-}
-
 type SortCol = 'number' | 'title' | 'author' | 'created' | 'updated'
 
 export default function TriageBoard({ pullRequests }: Props) {
@@ -142,9 +128,7 @@ export default function TriageBoard({ pullRequests }: Props) {
     { label: 'Title', col: 'title' },
     { label: 'Author', col: 'author', width: '120px' },
     { label: 'CI', width: '130px' },
-    { label: 'Approvals', width: '150px' },
     { label: 'Status', width: '130px' },
-    { label: 'Changes Requested', width: '170px' },
     { label: 'Created', col: 'created', width: '72px' },
     { label: 'Updated', col: 'updated', width: '80px' },
   ]
@@ -305,14 +289,6 @@ export default function TriageBoard({ pullRequests }: Props) {
                     : rawStatus.key === 'open' && pr.ci_status === 'success'
                       ? { ...rawStatus, label: 'Passing all CI' }
                       : rawStatus
-                const allBadges = reviewerBadgesFor(pr).filter(b => !isBotReviewer(b.user))
-                const badges = allBadges.slice(0, 3)
-                const extra = allBadges.length - badges.length
-                const approvedAt = new Map(
-                  (pr.approval_summary?.approved_user_details || []).map(d => [d.user, d.submitted_at])
-                )
-                const criCell = changesRequestedCell(pr)
-                const commented = (pr.approval_summary?.commented_users || []).filter(u => u && !isBotReviewer(u))
                 return (
                   <tr
                     key={`${pr.repository_name}-${pr.number}`}
@@ -372,73 +348,12 @@ export default function TriageBoard({ pullRequests }: Props) {
                       )}
                     </td>
                     <td className="px-4 py-3 align-top">
-                      {badges.length === 0 && commented.length === 0 ? (
-                        <span style={type.secondary}>—</span>
-                      ) : (
-                        <>
-                          {badges.map(b => {
-                            const at = b.state === 'approved' ? approvedAt.get(b.user) : null
-                            return (
-                              <span key={b.user} className="block">
-                                <span
-                                  className="block truncate"
-                                  title={`${b.user} (${b.state.replace('_', ' ')})`}
-                                  style={{ ...type.secondary, color: badgeTone[b.state] || T.text }}
-                                >
-                                  {displayUser(b.user)}
-                                </span>
-                                {at && (
-                                  <span className="block truncate" style={{ ...type.secondary, fontSize: 10 }}>
-                                    {fmtEastern(at)}
-                                  </span>
-                                )}
-                              </span>
-                            )
-                          })}
-                          {extra > 0 && (
-                            <span
-                              className="block"
-                              style={type.secondary}
-                              title={allBadges.slice(3).map(b => `${b.user} (${b.state})`).join(', ')}
-                            >
-                              +{extra} more
-                            </span>
-                          )}
-                          {commented.length > 0 && badges.every(b => b.state !== 'commented') && (
-                            <span
-                              className="block truncate"
-                              style={{ ...type.secondary, fontSize: 11 }}
-                              title={`Commented: ${commented.join(', ')}`}
-                            >
-                              💬 {commented.map(displayUser).join(', ')}
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 align-top">
                       <span className="inline-flex items-center gap-1.5 max-w-full">
                         <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: statusTone(status.key) }} />
                         <span className="truncate" style={type.secondary} title={status.label}>
                           {status.label}
                         </span>
                       </span>
-                    </td>
-                    <td className="px-4 py-3 align-top">
-                      {criCell ? (
-                        <>
-                          <span className="block truncate" style={{ ...type.secondary, color: criTone(criCell.tone) }} title={criCell.label}>
-                            {criCell.label}
-                          </span>
-                          {criCell.when && (
-                            <span className="block truncate" style={{ ...type.secondary, fontSize: 11 }}>
-                              {criCell.when}
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <span style={type.secondary}>—</span>
-                      )}
                     </td>
                     <td className="px-4 py-3 align-top tabular-nums" style={type.secondary} title={`opened ${absoluteTime(pr.created_at)}`}>
                       {timeAgoShort(pr.created_at)}
