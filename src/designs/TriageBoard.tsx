@@ -71,6 +71,12 @@ const QUEUE_COPY: Record<string, { title: string; hint: string }> = {
   exempt: { title: 'Exempt', hint: 'backend review not required' },
 }
 
+// Priority labels all carry "tiger" somewhere in the name (e.g. "Tiger Team",
+// "tiger-priority") — surface just those, not the full label list.
+function tigerLabels(pr: PullRequest): string[] {
+  return (pr.labels || []).filter(label => /tiger/i.test(label))
+}
+
 function statusTone(key: Status): string {
   if (key === 'failing' || key === 'failing_be_approval') return T.red
   if (key === 'approved') return T.green
@@ -289,6 +295,7 @@ export default function TriageBoard({ pullRequests }: Props) {
                     : rawStatus.key === 'open' && pr.ci_status === 'success'
                       ? { ...rawStatus, label: 'Passing all CI' }
                       : rawStatus
+                const tiger = tigerLabels(pr)
                 return (
                   <tr
                     key={`${pr.repository_name}-${pr.number}`}
@@ -324,6 +331,20 @@ export default function TriageBoard({ pullRequests }: Props) {
                       <span className="block truncate" style={type.primary} title={pr.title}>
                         {pr.title}
                       </span>
+                      {tiger.length > 0 && (
+                        <span className="flex flex-wrap gap-1 mt-1">
+                          {tiger.map(label => (
+                            <span
+                              key={label}
+                              className="rounded px-1.5 py-0.5 whitespace-nowrap"
+                              style={{ fontSize: 10, fontWeight: 600, color: T.amber, background: 'rgba(251,191,36,0.14)' }}
+                              title={label}
+                            >
+                              {label}
+                            </span>
+                          ))}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 align-top">
                       <span className="block truncate" style={type.secondary} title={pr.author}>
