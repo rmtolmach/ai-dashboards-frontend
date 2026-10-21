@@ -67,7 +67,7 @@ const QUEUE_COPY: Record<string, { title: string; hint: string }> = {
   approved: { title: 'Approved but unmerged', hint: 'cleared, not yet merged' },
   all: { title: 'All open', hint: 'every open PR' },
   drafts: { title: 'Drafts', hint: 'work in progress' },
-  dependabot: { title: 'Dependabot', hint: 'automated updates' },
+  dependabot: { title: 'Dependabot, etc.', hint: 'automated updates and register-app PRs' },
   exempt: { title: 'Exempt', hint: 'backend review not required' },
 }
 

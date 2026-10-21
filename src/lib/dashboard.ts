@@ -47,7 +47,7 @@ export const FILTERS: FilterDef[] = [
   { key: 'failing', label: 'Failing CI', predicate: isInFailingCiBucket },
   { key: 'approved', label: 'Approved · unmerged', predicate: isFinishedUnmerged },
   { key: 'drafts', label: 'Drafts', predicate: pr => pr.draft },
-  { key: 'dependabot', label: 'Dependabot', predicate: isDependabot },
+  { key: 'dependabot', label: 'Dependabot, etc.', predicate: isDependabot },
   { key: 'exempt', label: 'Exempt BE review', predicate: pr => !pr.draft && isTrulyExemptFromBackendReview(pr) },
   { key: 'all', label: 'All open', predicate: pr => pr.state === 'open' },
 ]

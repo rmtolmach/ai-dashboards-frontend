@@ -395,6 +395,8 @@ export function hasFailingCi(pr: PullRequest): boolean {
 
 export function isDependabot(pr: PullRequest): boolean {
   if (pr.author === 'dependabot[bot]') return true
+  // Bot-generated register-app PRs share the Dependabot bucket.
+  if (pr.labels?.includes('register-app')) return true
   // GHE migration anonymized some author names to opaque archive identifiers
   // (long alphanumeric strings). Detect dependabot via the title signature
   // ("Bump <pkg> from <x> to <y>") and a non-human-looking author.
