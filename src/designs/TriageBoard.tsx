@@ -51,24 +51,25 @@ const type = {
   label: { color: T.text, fontSize: 11, fontWeight: 600 } as const,
 }
 
-// One row of nine equal boxes (per Ryan, 2026-08-20). Titles are compressed
+// One row of nine equal boxes (per Ryan, 2026-08-20). Drafts was dropped and
+// DevOps Open added at the far right (2026-11-04). Titles are compressed
 // to survive nine-across at 1480px; the fuller explanation lives in each
 // card's hover tooltip and in the table header once a queue is selected.
 const QUEUES: FilterKey[] = [
   'ready', 'dependabot', 'awaiting', 'team', 'failing',
-  'approved', 'drafts', 'exempt', 'all',
+  'approved', 'exempt', 'all', 'devops',
 ]
 
 const QUEUE_COPY: Record<string, { title: string; hint: string }> = {
-  ready: { title: 'Ready', hint: 'awaiting backend approval' },
+  ready: { title: 'Backend Ready', hint: 'awaiting backend approval' },
   team: { title: 'Awaiting team review', hint: 'awaiting first team review' },
   awaiting: { title: 'Changes requested', hint: 'reviewer requested changes — waiting on the author' },
   failing: { title: 'Failing CI', hint: 'real check failures' },
   approved: { title: 'Approved but unmerged', hint: 'cleared, not yet merged' },
   all: { title: 'All open', hint: 'every open PR' },
-  drafts: { title: 'Drafts', hint: 'work in progress' },
-  dependabot: { title: 'Dependabot, etc.', hint: 'automated updates and register-app PRs' },
+  dependabot: { title: 'BE Dependabot, etc.', hint: 'automated updates and register-app PRs' },
   exempt: { title: 'Exempt', hint: 'backend review not required' },
+  devops: { title: 'DevOps Open', hint: 'awaiting vsp-operations review' },
 }
 
 // Priority labels all carry "tiger" somewhere in the name (e.g. "Tiger Team",

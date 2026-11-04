@@ -398,6 +398,7 @@ function EmptyState({ filterKey, hasSearch }: { filterKey: FilterKey; hasSearch:
     team: ['No first reviews owed.', 'Every PR has had a team look.'],
     exempt: ['None exempt.', 'No PRs carry the exemption label.'],
     all: ['Empty queue.', 'All repositories are clear.'],
+    devops: ['Nothing for DevOps.', 'No open PRs await vsp-operations.'],
   }
   const [title, sub] = lines[filterKey]
   return (

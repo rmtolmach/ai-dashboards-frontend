@@ -47,7 +47,10 @@ export function usePullRequests(): UsePullRequestsResult {
       }
       setIsUpdating(data.updating || false)
       if (!isPolling || data.last_updated !== lastUpdatedRef.current) {
-        const all = [...(data.pull_requests || []), ...(data.approved_pull_requests || [])]
+        const tracked = [...(data.pull_requests || []), ...(data.approved_pull_requests || [])]
+        const trackedUrls = new Set(tracked.map(pr => pr.url))
+        const devops = (data.devops_pull_requests || []).filter(pr => !trackedUrls.has(pr.url))
+        const all = [...tracked, ...devops]
         setPullRequests(all)
         lastUpdatedRef.current = data.last_updated
         setLastUpdated(data.last_updated)

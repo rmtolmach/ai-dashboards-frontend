@@ -71,6 +71,9 @@ export interface PullRequest {
 export interface ApiResponse {
   pull_requests: PullRequest[]
   approved_pull_requests: PullRequest[]
+  // Org-wide PRs awaiting vsp-operations review, from infra repos the
+  // scraper doesn't otherwise track. Only drives the DevOps Open queue.
+  devops_pull_requests?: PullRequest[]
   count: number
   approved_count: number
   repository: string
@@ -312,6 +315,16 @@ export function needsReReview(pr: PullRequest): boolean {
 // requested_reviewers/requested_teams fields on the PR list payload.
 export function hasPendingTeamReview(pr: PullRequest): boolean {
   return (pr.pending_reviewers?.length ?? 0) > 0 || (pr.pending_teams?.length ?? 0) > 0
+}
+
+// "DevOps Open" — open, non-draft PRs still waiting on a vsp-operations
+// review. GitHub drops the team from requested_teams once a member reviews,
+// so a PR leaves this queue as soon as ops has weighed in.
+export const DEVOPS_TEAM_SLUG = 'vsp-operations'
+
+export function needsDevOpsReview(pr: PullRequest): boolean {
+  if (pr.draft || pr.state !== 'open') return false
+  return (pr.pending_teams || []).includes(DEVOPS_TEAM_SLUG)
 }
 
 export function isFinishedUnmerged(pr: PullRequest): boolean {

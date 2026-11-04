@@ -10,6 +10,7 @@ import {
   isDependabot,
   isTrulyExemptFromBackendReview,
   needsFirstTeamReview,
+  needsDevOpsReview,
 } from '../types/pull-request'
 import { displayUser, isGhostUser } from './utils'
 
@@ -23,6 +24,7 @@ export type FilterKey =
   | 'approved'
   | 'exempt'
   | 'all'
+  | 'devops'
 
 export interface FilterDef {
   key: FilterKey
@@ -40,16 +42,26 @@ export function isInFailingCiBucket(pr: PullRequest): boolean {
   return hasFailingCi(pr) && hasNonReviewFailingChecks(pr)
 }
 
-export const FILTERS: FilterDef[] = [
-  { key: 'ready', label: 'Ready', predicate: isReadyForReview },
+// PRs awaiting vsp-operations review belong to DevOps Open alone; every
+// other queue is backend-only and never shows them.
+const backendOnly = (predicate: (pr: PullRequest) => boolean) =>
+  (pr: PullRequest) => !needsDevOpsReview(pr) && predicate(pr)
+
+const BACKEND_FILTERS: FilterDef[] = [
+  { key: 'ready', label: 'Backend Ready', predicate: isReadyForReview },
   { key: 'team', label: 'Needing team review', predicate: needsFirstTeamReview },
   { key: 'awaiting', label: 'Awaiting author', predicate: isAwaitingAuthorChanges },
   { key: 'failing', label: 'Failing CI', predicate: isInFailingCiBucket },
   { key: 'approved', label: 'Approved · unmerged', predicate: isFinishedUnmerged },
   { key: 'drafts', label: 'Drafts', predicate: pr => pr.draft },
-  { key: 'dependabot', label: 'Dependabot, etc.', predicate: isDependabot },
+  { key: 'dependabot', label: 'BE Dependabot, etc.', predicate: isDependabot },
   { key: 'exempt', label: 'Exempt BE review', predicate: pr => !pr.draft && isTrulyExemptFromBackendReview(pr) },
   { key: 'all', label: 'All open', predicate: pr => pr.state === 'open' },
+]
+
+export const FILTERS: FilterDef[] = [
+  ...BACKEND_FILTERS.map(f => ({ ...f, predicate: backendOnly(f.predicate) })),
+  { key: 'devops', label: 'DevOps Open', predicate: needsDevOpsReview },
 ]
 
 export type Status =
@@ -63,6 +75,7 @@ export type Status =
   | 'ready'
   | 'draft'
   | 'open'
+  | 'devops'
 
 export function classifyStatus(pr: PullRequest): { key: Status; label: string } {
   const changesRequested = pr.approval_summary?.changes_requested_count || 0
@@ -81,6 +94,14 @@ export function classifyStatus(pr: PullRequest): { key: Status; label: string } 
   ).length
   if (pr.ci_status === 'failure' && realFailingCount > 0) {
     return { key: 'failing', label: `${realFailingCount} failing` }
+  }
+
+  // Backend-review states below don't apply to DevOps PRs.
+  if (needsDevOpsReview(pr)) {
+    if (pr.ci_status === 'pending' || (pr.pending_checks ?? 0) > 0) {
+      return { key: 'ci_pending', label: 'CI running' }
+    }
+    return { key: 'devops', label: 'Awaiting DevOps' }
   }
 
   // The PR needs a re-review and the stale approval shouldn't read as "Ready":
@@ -432,6 +453,7 @@ export function countByFilter(prs: PullRequest[]): Record<FilterKey, number> {
     approved: 0,
     exempt: 0,
     all: 0,
+    devops: 0,
   }
   for (const pr of prs) for (const f of FILTERS) if (f.predicate(pr)) base[f.key]++
   return base

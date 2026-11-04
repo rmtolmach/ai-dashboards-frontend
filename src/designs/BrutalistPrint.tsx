@@ -359,6 +359,7 @@ function BrutalistEmpty({ filterKey, hasSearch }: { filterKey: FilterKey; hasSea
     team: 'NO FIRST REVIEWS.',
     exempt: 'NONE.',
     all: 'EMPTY.',
+    devops: 'NOTHING FOR DEVOPS.',
   }
   return (
     <div className="px-6 py-24 text-center">

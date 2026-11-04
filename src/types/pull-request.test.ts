@@ -4,6 +4,7 @@ import {
   isFinishedUnmerged,
   hasNonReviewFailingChecks,
   needsFirstTeamReview,
+  needsDevOpsReview,
 } from './pull-request'
 import type { PullRequest } from './pull-request'
 
@@ -149,5 +150,23 @@ describe('needsFirstTeamReview', () => {
         }),
       ),
     ).toBe(true)
+  })
+})
+
+describe('needsDevOpsReview', () => {
+  it('is true when vsp-operations is a pending team on an open PR', () => {
+    expect(needsDevOpsReview(base({ pending_teams: ['vsp-operations'] }))).toBe(true)
+  })
+
+  it('is false once vsp-operations is no longer pending', () => {
+    expect(needsDevOpsReview(base({ pending_teams: ['benefits-non-disability'] }))).toBe(false)
+  })
+
+  it('excludes drafts', () => {
+    expect(needsDevOpsReview(base({ draft: true, pending_teams: ['vsp-operations'] }))).toBe(false)
+  })
+
+  it('excludes closed PRs', () => {
+    expect(needsDevOpsReview(base({ state: 'closed', pending_teams: ['vsp-operations'] }))).toBe(false)
   })
 })

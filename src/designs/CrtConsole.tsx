@@ -338,6 +338,7 @@ function CrtEmpty({ filterKey, hasSearch }: { filterKey: FilterKey; hasSearch: b
     team: '> no first reviews owed.',
     exempt: '> none exempt.',
     all: '> repositories clear.',
+    devops: '> nothing awaiting devops.',
   }
   return (
     <div className="px-6 py-12 text-center text-[16px]">
