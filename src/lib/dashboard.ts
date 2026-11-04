@@ -48,13 +48,13 @@ const backendOnly = (predicate: (pr: PullRequest) => boolean) =>
   (pr: PullRequest) => !needsDevOpsReview(pr) && predicate(pr)
 
 const BACKEND_FILTERS: FilterDef[] = [
-  { key: 'ready', label: 'Backend Ready', predicate: isReadyForReview },
+  { key: 'ready', label: 'Ready', predicate: isReadyForReview },
   { key: 'team', label: 'Needing team review', predicate: needsFirstTeamReview },
   { key: 'awaiting', label: 'Awaiting author', predicate: isAwaitingAuthorChanges },
   { key: 'failing', label: 'Failing CI', predicate: isInFailingCiBucket },
   { key: 'approved', label: 'Approved · unmerged', predicate: isFinishedUnmerged },
   { key: 'drafts', label: 'Drafts', predicate: pr => pr.draft },
-  { key: 'dependabot', label: 'BE Dependabot, etc.', predicate: isDependabot },
+  { key: 'dependabot', label: 'Dependabot, etc.', predicate: isDependabot },
   { key: 'exempt', label: 'Exempt BE review', predicate: pr => !pr.draft && isTrulyExemptFromBackendReview(pr) },
   { key: 'all', label: 'All open', predicate: pr => pr.state === 'open' },
 ]

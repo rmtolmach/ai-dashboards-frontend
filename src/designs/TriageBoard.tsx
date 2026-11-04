@@ -51,23 +51,28 @@ const type = {
   label: { color: T.text, fontSize: 11, fontWeight: 600 } as const,
 }
 
-// One row of nine equal boxes (per Ryan, 2026-08-20). Drafts was dropped and
-// DevOps Open added at the far right (2026-11-04). Titles are compressed
-// to survive nine-across at 1480px; the fuller explanation lives in each
-// card's hover tooltip and in the table header once a queue is selected.
+// One row of equal boxes (per Ryan, 2026-08-20). Titles are compressed to
+// survive nine-across at 1480px; the fuller explanation lives in each card's
+// hover tooltip and in the table header once a queue is selected.
 const QUEUES: FilterKey[] = [
   'ready', 'dependabot', 'awaiting', 'team', 'failing',
-  'approved', 'exempt', 'all', 'devops',
+  'approved', 'exempt', 'all',
 ]
 
+// DevOps Open belongs to the vsp-operations team, who share this dashboard;
+// it sits apart from the backend queues behind a divider (2026-11-04).
+const DEVOPS_QUEUE: FilterKey = 'devops'
+const DEVOPS_PRS_URL =
+  'https://va.ghe.com/issues/assigned?q=is%3Apr+is%3Aopen+draft%3Afalse+team-review-requested%3Asoftware%2Fvsp-operations+sort%3Aupdated-desc+org%3Asoftware'
+
 const QUEUE_COPY: Record<string, { title: string; hint: string }> = {
-  ready: { title: 'Backend Ready', hint: 'awaiting backend approval' },
+  ready: { title: 'Ready', hint: 'awaiting backend approval' },
   team: { title: 'Awaiting team review', hint: 'awaiting first team review' },
   awaiting: { title: 'Changes requested', hint: 'reviewer requested changes — waiting on the author' },
   failing: { title: 'Failing CI', hint: 'real check failures' },
   approved: { title: 'Approved but unmerged', hint: 'cleared, not yet merged' },
   all: { title: 'All open', hint: 'every open PR' },
-  dependabot: { title: 'BE Dependabot, etc.', hint: 'automated updates and register-app PRs' },
+  dependabot: { title: 'Dependabot, etc.', hint: 'automated updates and register-app PRs' },
   exempt: { title: 'Exempt', hint: 'backend review not required' },
   devops: { title: 'DevOps Open', hint: 'awaiting vsp-operations review' },
 }
@@ -117,6 +122,11 @@ export default function TriageBoard({ pullRequests }: Props) {
 
   const activeDef = FILTERS.find(f => f.key === active)
 
+  const devopsRepoCount = useMemo(
+    () => new Set(applyFilter(pullRequests, DEVOPS_QUEUE, '').map(pr => pr.repository_name)).size,
+    [pullRequests]
+  )
+
   const toggleSort = (col: SortCol) => {
     if (sortCol === col) setSortAsc(v => !v)
     else {
@@ -130,7 +140,7 @@ export default function TriageBoard({ pullRequests }: Props) {
   }
 
   const HEADERS: Array<{ label: string; col?: SortCol; width?: string }> = [
-    { label: 'PR', col: 'number', width: '80px' },
+    { label: 'PR', col: 'number', width: '150px' },
     { label: 'Diff', width: '70px' },
     { label: 'Title', col: 'title' },
     { label: 'Author', col: 'author', width: '180px' },
@@ -139,6 +149,42 @@ export default function TriageBoard({ pullRequests }: Props) {
     { label: 'Created', col: 'created', width: '72px' },
     { label: 'Updated', col: 'updated', width: '80px' },
   ]
+
+  const renderQueue = (key: FilterKey) => {
+    const sel = key === active
+    const copy = QUEUE_COPY[key]
+    const isWarn = key === 'failing'
+    return (
+      <button
+        key={key}
+        onClick={() => setActive(key)}
+        title={copy.hint}
+        className={`queue-box ${sel ? 'queue-box--sel' : ''} text-left rounded-lg px-3 py-2.5 focus-visible:outline focus-visible:outline-2`}
+        style={{
+          background: sel ? T.accentDim : T.surface,
+          border: `1px solid ${sel ? T.accent : T.line}`,
+          outlineColor: T.accent,
+        }}
+      >
+        <div
+          className="uppercase tracking-[0.08em] leading-[1.3] min-h-[26px]"
+          style={{ ...type.label, fontSize: 10, color: sel ? T.accent : T.text }}
+        >
+          {copy.title}
+        </div>
+        <div
+          className="mt-0.5 tabular-nums"
+          style={{
+            fontSize: 24,
+            fontWeight: 600,
+            color: isWarn && counts[key] > 0 ? T.red : T.text,
+          }}
+        >
+          {counts[key]}
+        </div>
+      </button>
+    )
+  }
 
   return (
     <div style={{ background: T.bg, color: T.text, minHeight: '100vh' }}>
@@ -168,43 +214,19 @@ export default function TriageBoard({ pullRequests }: Props) {
         }
       `}</style>
       <div className="mx-auto max-w-[1480px] px-5 sm:px-7 py-6 space-y-5">
-        {/* ── One row: all nine queues as equal boxes ── */}
-        <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2">
-          {QUEUES.map(key => {
-            const sel = key === active
-            const copy = QUEUE_COPY[key]
-            const isWarn = key === 'failing'
-            return (
-              <button
-                key={key}
-                onClick={() => setActive(key)}
-                title={copy.hint}
-                className={`queue-box ${sel ? 'queue-box--sel' : ''} text-left rounded-lg px-3 py-2.5 focus-visible:outline focus-visible:outline-2`}
-                style={{
-                  background: sel ? T.accentDim : T.surface,
-                  border: `1px solid ${sel ? T.accent : T.line}`,
-                  outlineColor: T.accent,
-                }}
-              >
-                <div
-                  className="uppercase tracking-[0.08em] leading-[1.3] min-h-[26px]"
-                  style={{ ...type.label, fontSize: 10, color: sel ? T.accent : T.text }}
-                >
-                  {copy.title}
-                </div>
-                <div
-                  className="mt-0.5 tabular-nums"
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 600,
-                    color: isWarn && counts[key] > 0 ? T.red : T.text,
-                  }}
-                >
-                  {counts[key]}
-                </div>
-              </button>
-            )
-          })}
+        {/* ── One row: the backend queues, then DevOps Open set apart ── */}
+        <div className="flex flex-col lg:flex-row gap-2 lg:gap-3">
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-2 flex-1">
+            {QUEUES.map(renderQueue)}
+          </div>
+          <div
+            aria-hidden
+            className="h-px lg:h-auto lg:w-px my-1 lg:my-0"
+            style={{ background: T.line }}
+          />
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-1 gap-2 lg:w-[calc((100%-4.5rem)/9)] lg:shrink-0">
+            {renderQueue(DEVOPS_QUEUE)}
+          </div>
         </div>
 
         {/* ── Search ── */}
@@ -240,7 +262,19 @@ export default function TriageBoard({ pullRequests }: Props) {
               <span className="tabular-nums" style={type.secondary}>
                 {rows.length} {rows.length === 1 ? 'PR' : 'PRs'}
               </span>
-              {QUEUE_COPY[active]?.hint && (
+              {active === DEVOPS_QUEUE ? (
+                <a
+                  href={DEVOPS_PRS_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:no-underline"
+                  style={type.secondary}
+                  title="Open this list on GitHub"
+                >
+                  vsp-operations · PRs awaiting ops review across {devopsRepoCount} infra{' '}
+                  {devopsRepoCount === 1 ? 'repo' : 'repos'}
+                </a>
+              ) : QUEUE_COPY[active]?.hint && (
                 <span style={type.secondary}>— {QUEUE_COPY[active].hint}</span>
               )}
             </div>

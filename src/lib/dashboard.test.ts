@@ -26,7 +26,7 @@ describe('DevOps Open isolation', () => {
     expect(matching).toEqual(['devops'])
   })
 
-  it('keeps DevOps dependabot PRs out of BE Dependabot', () => {
+  it('keeps DevOps dependabot PRs out of Dependabot', () => {
     const counts = countByFilter([base({ author: 'dependabot[bot]' })])
     expect(counts.dependabot).toBe(0)
     expect(counts.devops).toBe(1)
